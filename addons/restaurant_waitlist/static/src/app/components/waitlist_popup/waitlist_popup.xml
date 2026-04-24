@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="restaurant_waitlist.WaitlistPopup">
+        <Dialog size="'xl'" title="props.title">
+            <div class="o_waitlist_popup container-fluid p-0">
+                <div class="row g-3">
+                    <div class="col-12 col-xl-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header fw-bold">
+                                Nuevo registro
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre del cliente</label>
+                                    <input class="form-control" name="customer_name" t-model="state.form.customer_name" placeholder="Ej. Ana Pérez"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Número de personas</label>
+                                    <input class="form-control" type="number" min="1" name="party_size" t-model="state.form.party_size"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input class="form-control" name="phone" t-model="state.form.phone" placeholder="Ej. 5555-1234"/>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Estado</label>
+                                    <select class="form-select" name="state" t-model="state.form.state">
+                                        <option value="waiting">En espera</option>
+                                        <option value="seated">Asignado</option>
+                                        <option value="cancelled">Cancelado</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nota</label>
+                                    <textarea class="form-control" rows="3" name="note" t-model="state.form.note" placeholder="Observaciones opcionales"/>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-primary" t-on-click="createRecord" t-att-disabled="state.loading">
+                                        Agregar
+                                    </button>
+                                    <button class="btn btn-outline-secondary" t-on-click="resetForm" t-att-disabled="state.loading">
+                                        Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-xl-8">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header d-flex align-items-center justify-content-between">
+                                <span class="fw-bold">Registros recientes</span>
+                                <button class="btn btn-sm btn-outline-secondary" t-on-click="loadRecords" t-att-disabled="state.loading">
+                                    Actualizar
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <t t-if="state.loading">
+                                    <div class="text-muted">Cargando...</div>
+                                </t>
+                                <t t-elif="!state.records.length">
+                                    <div class="text-muted">Todavía no hay registros.</div>
+                                </t>
+                                <t t-foreach="state.records" t-as="record" t-key="record.id">
+                                    <div class="border rounded p-3 mb-3 bg-white">
+                                        <div class="d-flex justify-content-between align-items-start gap-2">
+                                            <div>
+                                                <div class="fw-bold" t-esc="record.customer_name"/>
+                                                <div class="text-muted small">
+                                                    <span t-esc="record.party_size"/> personas
+                                                    <t t-if="record.phone"> · <span t-esc="record.phone"/></t>
+                                                </div>
+                                                <div class="text-muted small" t-esc="record.registered_at"/>
+                                            </div>
+                                            <span class="badge" t-att-class="stateClass(record.state)">
+                                                <t t-if="record.state === 'waiting'">En espera</t>
+                                                <t t-elif="record.state === 'seated'">Asignado</t>
+                                                <t t-else="">Cancelado</t>
+                                            </span>
+                                        </div>
+                                        <div t-if="record.note" class="mt-2 small">
+                                            <strong>Nota:</strong>
+                                            <span t-esc="record.note"/>
+                                        </div>
+                                        <div class="d-flex gap-2 mt-3 flex-wrap">
+                                            <div class="w-100 mb-2" t-if="record.state !== 'cancelled'">
+                                                <label class="form-label small mb-1">Asignar a mesa</label>
+                                                <div class="d-flex gap-2 flex-wrap">
+                                                    <select class="form-select form-select-sm" style="max-width: 280px;" t-on-change="(ev) => this.setRecordTableId(record.id, ev.target.value)">
+                                                        <option value="">Selecciona una mesa libre</option>
+                                                        <t t-foreach="availableTables" t-as="table" t-key="table.id">
+                                                            <option t-att-value="table.id">
+                                                                <t t-esc="table.floor_id?.name"/> - Mesa <t t-esc="table.table_number"/>
+                                                            </option>
+                                                        </t>
+                                                    </select>
+                                                    <button class="btn btn-sm btn-success" t-on-click="() => this.assignSelectedTable(record)">
+                                                        Asignar mesa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-sm btn-warning" t-if="record.state !== 'waiting'" t-on-click="() => this.setState(record, 'waiting')">
+                                                Volver a espera
+                                            </button>
+                                            <button class="btn btn-sm btn-secondary" t-if="record.state !== 'cancelled'" t-on-click="() => this.setState(record, 'cancelled')">
+                                                Cancelar
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" t-if="record.state === 'cancelled'" t-on-click="() => this.deleteRecord(record)">
+                                                Eliminar
+                                            </button>
+                                        </div>
+                                        <div class="mt-2 small text-muted" t-if="record.table_id">
+                                            Mesa asignada:
+                                            <strong>
+                                                <t t-esc="record.table_id[1]"/>
+                                            </strong>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-secondary" t-on-click="props.close">Cerrar</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

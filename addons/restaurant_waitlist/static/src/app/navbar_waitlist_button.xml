@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-inherit="point_of_sale.Navbar" t-inherit-mode="extension">
+        <xpath expr="//div[contains(@class, 'navbar-menu')]/button[contains(@class, 'orders-button')]" position="after">
+            <button
+                t-if="pos.config.module_pos_restaurant"
+                class="waitlist-button btn btn-lg btn-light lh-lg"
+                t-on-click="() => this.onClickWaitlist()"
+            >
+                <span t-if="!ui.isSmall">Lista de Espera</span>
+                <i t-else="" class="fa fa-fw fa-users" t-att-class="{'fa-lg' : !ui.isSmall}"/>
+            </button>
+        </xpath>
+    </t>
+</templates>
+
