@@ -14,6 +14,7 @@
         "point_of_sale._assets_pos": [
             "restaurant_waitlist/static/src/app/navbar_waitlist_button.js",
             "restaurant_waitlist/static/src/app/navbar_waitlist_button.xml",
+            "restaurant_waitlist/static/src/app/pos_store_waitlist_patch.js",
             "restaurant_waitlist/static/src/app/components/waitlist_popup/waitlist_popup.js",
             "restaurant_waitlist/static/src/app/components/waitlist_popup/waitlist_popup.xml",
         ],

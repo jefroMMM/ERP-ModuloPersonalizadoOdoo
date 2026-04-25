@@ -56,6 +56,7 @@ class RestaurantWaitlist(models.Model):
         if self._get_occupied_table_ids(table, waitlist_id=record.id):
             raise UserError(_("La mesa ya está ocupada o reservada."))
 
+        old_table = record.table_id
         record.write(
             {
                 "state": "seated",
@@ -63,6 +64,9 @@ class RestaurantWaitlist(models.Model):
                 "assigned_at": fields.Datetime.now(),
             }
         )
+        if old_table and old_table.id != table.id:
+            old_table.write({"waitlist_reserved": False})
+        table.write({"waitlist_reserved": True})
         return True
 
     @api.model
@@ -70,6 +74,8 @@ class RestaurantWaitlist(models.Model):
         record = self.browse(waitlist_id).exists()
         if not record:
             raise UserError(_("El registro de la lista de espera no existe."))
+        if record.table_id:
+            record.table_id.write({"waitlist_reserved": False})
         record.write({"state": "waiting", "table_id": False, "assigned_at": False})
         return True
 
@@ -78,5 +84,7 @@ class RestaurantWaitlist(models.Model):
         record = self.browse(waitlist_id).exists()
         if not record:
             raise UserError(_("El registro de la lista de espera no existe."))
+        if record.table_id:
+            record.table_id.write({"waitlist_reserved": False})
         record.write({"state": "cancelled", "table_id": False, "assigned_at": False})
         return True

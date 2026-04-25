@@ -53,6 +53,7 @@ También incluye:
 - acción de ventana
 - menú visible en Odoo
 - botón visible dentro del POS/restaurante para abrir la lista de espera desde la pantalla de mesas
+- la mesa asignada se pinta como ocupada en el plano del POS aunque aún no exista una orden
 
 ## Cómo levantar el proyecto
 

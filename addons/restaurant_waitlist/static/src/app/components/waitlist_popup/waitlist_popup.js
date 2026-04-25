@@ -58,7 +58,7 @@ export class WaitlistPopup extends Component {
         return this.pos
             .models["restaurant.table"]
             .getAll()
-            .filter((table) => table.active && !this.occupiedTableIds.has(table.id))
+            .filter((table) => table.active && !table.waitlist_reserved && !this.occupiedTableIds.has(table.id))
             .sort((a, b) => {
                 const floorA = a.floor_id?.name || "";
                 const floorB = b.floor_id?.name || "";
@@ -112,6 +112,13 @@ export class WaitlistPopup extends Component {
         this.state.selectedTableByRecordId[recordId] = tableId;
     }
 
+    syncTableReservation(tableId, reserved) {
+        if (!tableId || !this.pos?.data?.write) {
+            return;
+        }
+        this.pos.data.write("restaurant.table", [tableId], { waitlist_reserved: reserved });
+    }
+
     async refreshRecords() {
         await this.loadRecords();
     }
@@ -150,10 +157,13 @@ export class WaitlistPopup extends Component {
 
     async setState(record, state) {
         try {
+            const previousTableId = record.table_id?.[0];
             if (state === "waiting") {
                 await this.orm.call("restaurant.waitlist", "action_mark_waiting", [record.id]);
+                this.syncTableReservation(previousTableId, false);
             } else if (state === "cancelled") {
                 await this.orm.call("restaurant.waitlist", "action_mark_cancelled", [record.id]);
+                this.syncTableReservation(previousTableId, false);
             } else if (state === "seated") {
                 const selectedTableId = Number(this.getRecordTableId(record.id));
                 if (!selectedTableId) {
@@ -166,6 +176,10 @@ export class WaitlistPopup extends Component {
                     record.id,
                     selectedTableId,
                 ]);
+                if (previousTableId && previousTableId !== selectedTableId) {
+                    this.syncTableReservation(previousTableId, false);
+                }
+                this.syncTableReservation(selectedTableId, true);
             }
             await this.loadRecords();
         } catch (error) {
@@ -213,6 +227,7 @@ export class WaitlistPopup extends Component {
         }
         try {
             await this.orm.call("restaurant.waitlist", "action_assign_table", [record.id, tableId]);
+            this.syncTableReservation(tableId, true);
             await this.loadRecords();
         } catch (error) {
             this.notification.add(_t("No se pudo asignar la mesa."), {
